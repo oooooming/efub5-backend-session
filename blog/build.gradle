@@ -39,6 +39,11 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	// h2
 	testRuntimeOnly 'com.h2database:h2'
+    /* jwt */
+    implementation 'io.jsonwebtoken:jjwt:0.12.6'
+    implementation 'javax.xml.bind:jaxb-api:2.3.1'
+    /* OAuth2 */
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 }
 
 tasks.named('test') {

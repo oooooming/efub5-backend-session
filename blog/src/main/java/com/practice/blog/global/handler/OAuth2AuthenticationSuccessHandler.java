@@ -18,9 +18,32 @@ import java.io.IOException;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class OAuth2AuthenticationSuccessHandler {
+public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
+    private final AccountsRepository accountsRepository;
+    private final TokenProvider tokenProvider;
 
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+                                        Authentication authentication) throws IOException {
+        DefaultOAuth2User oAuth2User = (DefaultOAuth2User) authentication.getPrincipal();
+        String email = (String) oAuth2User.getAttributes().get("email");
 
+        Account account = accountsRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("해당 email을 가진 Account를 찾을 수 없습니다. email: " + email));
 
+        String accessToken = tokenProvider.createAccessToken(account);
+        String refreshToken = tokenProvider.createRefreshToken(account);
+
+        tokenProvider.saveRefreshToken(account.getAccountId(), refreshToken);
+
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        String jsonResponse = String.format("{\"access_token\":\"%s\", \"refresh_token\":\"%s\"}", accessToken, refreshToken);
+        response.getWriter().write(jsonResponse);
+        response.getWriter().flush();
+
+        log.info("OAuth2 로그인 성공 - email: {}, accessToken 발급 완료", email);
+    }
 }
